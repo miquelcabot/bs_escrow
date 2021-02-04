@@ -3,7 +3,7 @@ const fs = require("fs-extra"); // fs with extra functions
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const Web3 = require('web3');
 
-const compiledFactoryPath = './src/ethereum/build/ConfidentialMultipartyRegisteredEDeliveryWithoutTTPFactory.json';
+const compiledFactoryPath = './build/Escrow.json';
 const compiledFactory = require(compiledFactoryPath);
 
 const provider = new HDWalletProvider(
