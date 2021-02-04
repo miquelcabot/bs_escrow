@@ -139,6 +139,11 @@ describe('Escrow contract test', () => {
     let balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
     console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
 
+    // We read the balance before completing the order
+    let balanceSeller0 = await escrowContract.methods.getAccountBalance(sellers[0]).call();
+    let balanceSeller0Ethers = Web3.utils.fromWei(balanceSeller0, 'ether');
+    console.log(`The Seller 0 has a balance of ${balanceSeller0Ethers} ethers before completing the order`);
+
     // The buyer completes an order
     await escrowContract.methods
       .complete(lastOrderId)
@@ -147,7 +152,11 @@ describe('Escrow contract test', () => {
     // We read the last order id
     balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
     balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
-    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
+    console.log(`The Buyer 0 has completed the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
 
+    // We read the balance after completing the order
+    balanceSeller0 = await escrowContract.methods.getAccountBalance(sellers[0]).call();
+    balanceSeller0Ethers = Web3.utils.fromWei(balanceSeller0, 'ether');
+    console.log(`The Seller 0 has a balance of ${balanceSeller0Ethers} ethers after completing the order`);
   });
 });

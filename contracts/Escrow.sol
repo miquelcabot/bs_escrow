@@ -62,6 +62,12 @@ contract Escrow {
     items[_title].seller = msg.sender;
     // We add the item to the itemsKeys array
     itemsKeys.push(_title);
+    // If the account doen't exist, we create it
+    if (accounts[msg.sender] == Account(0)) {
+      address newAccount = new Account(msg.sender);
+      accounts[msg.sender] = Account(newAccount);
+      accountsKeys.push(msg.sender);
+    }
   }
 
   // Returns the price of an item
@@ -86,7 +92,7 @@ contract Escrow {
     ordersKeys.push(lastOrderId);
   }
 
-  function getLastOrderId() public returns (uint) {
+  function getLastOrderId() public view returns (uint) {
     // We return the Id of the last created order
     return lastOrderId;
   }
@@ -107,7 +113,7 @@ contract Escrow {
     // We check that the order exists
     require(orders[_orderId] != Order(0), "The order doesn't exist");
     // We complete the order
-    Order(orders[_orderId]).complete(msg.sender);
+    Order(orders[_orderId]).complete(msg.sender, Account(Order(orders[_orderId]).getSeller()));
   }
 
   // The seller complains the Order
@@ -115,21 +121,22 @@ contract Escrow {
     // We check that the order exists
     require(orders[_orderId] != Order(0), "The order doesn't exist");
     // We complain the order
-    Order(orders[_orderId]).complain(msg.sender);
+    Order(orders[_orderId]).complain(msg.sender, Account(Order(orders[_orderId]).getBuyer()));
   }
  }
 
+/**
+  Account contract to store the deposits */
 contract Account {
   // Address of the account (buyer or seller)
   address public accountAdress;
   
   // Constructor funcion to create the account
   constructor (address _sender) public payable {
-    // Requires that the sender send a deposit of minimum 1 wei (>0 wei)
-    require(msg.value>0, "Sender has to send a deposit of minimun 1 wei");
     accountAdress = _sender;
   }
 
+  // Creates an order from an account and place the payment into that order
   function order(uint _id, string _title, uint _price, address _seller) public returns (Order) {
     address newOrder = (new Order).value(_price)(_id, accountAdress, _title, _price, _seller);
     return Order(newOrder);
@@ -159,21 +166,31 @@ contract Order {
     state = State.created;
   }
 
-  function complete(address _sender) public {
+  function complete(address _sender, Account _sellerAccount) public {
     // We check that the complete function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complete the order, it can't be yet completed or complained");
     // We paid the payment to the seller
-    seller.send(this.balance);
+    address(_sellerAccount).transfer(this.balance);
   }
 
-  function complain(address _sender) public {
+  function complain(address _sender, Account _buyerAccount) public {
     // We check that the complain function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complain the order, it can't be yet completed or complained");
     // We refund the payment to the buyer
-    buyer.send(this.balance);
+    address(_buyerAccount).transfer(this.balance);
+  }
+
+  // Returns the buyer of the order
+  function getBuyer() public view returns (address) {
+    return buyer;
+  }
+
+  // Returns the seller of the order
+  function getSeller() public view returns (address) {
+    return seller;
   }
 }
