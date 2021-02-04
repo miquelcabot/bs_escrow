@@ -24,6 +24,7 @@ beforeEach(async () => {
   sellers[0] = accounts[2];
   sellers[1] = accounts[3];
 
+  /*
   // We print the buyer's addresses
   buyers.forEach((address, index) => {
     console.log(`Buyer ${index} has the address: ${address}`);
@@ -32,6 +33,7 @@ beforeEach(async () => {
   sellers.forEach((address, index) => {
     console.log(`Buyer ${index} has the address: ${address}`);
   });
+  */
 
   escrowContract = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
     .deploy({ data: compiledEscrow.bytecode, arguments: [] })
@@ -46,140 +48,106 @@ describe('Escrow contract test', () => {
   });
 
   it('a buyer makes a credit', async () => {
-    // Buyer 0 makes a credit of 20 wei
+    // Buyer 0 makes a credit of 20 Ethers
     // We read the balance before the credit
     let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei before the credit`);
-    // The buyer makes a credit of 20 wei
+    let balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers before the credit`);
+    // The buyer makes a credit of 20 ethers
     await escrowContract.methods
       .credit()
-      .send({ from: buyers[0], gas: '6000000', value: 20 });
+      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
     // We read the balance after the credit
     balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei after the credit`);
-    // We check that the credit is of 20 wei
-    assert.equal(balanceBuyer0, 20)
+    balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers after the credit`);
+    // We check that the credit is of 20 ethers
+    assert.equal(balanceBuyer0, Web3.utils.toWei('20', 'ether'))
   });
 
   it('a seller offers an item', async () => {
     // The seller adds an item
     let itemTitle = 'Coffee';
-    let itemPrice = 3;
+    let itemPrice = Web3.utils.toWei('3', 'ether');
     await escrowContract.methods
       .offer(itemTitle, itemPrice)
       .send({ from: sellers[0], gas: '6000000' });
     // We check that the item has been saved, and has the correct price
     let checkItemPrice = await escrowContract.methods.getItemPrice('Coffee').call();
-    console.log(`The item '${itemTitle}' has been saved with a price of ${checkItemPrice} wei`);
+    let checkItemPriceEthers = Web3.utils.fromWei(checkItemPrice, 'ether');
+    console.log(`The item '${itemTitle}' has been saved with a price of ${checkItemPriceEthers} ethers`);
     assert.equal(itemPrice, checkItemPrice);
   });
 
   it('a buyer orders an item', async () => {
-    // The buyer makes a credit of 20 wei
+    // The buyer makes a credit of 20 ethers
     await escrowContract.methods
       .credit()
-      .send({ from: buyers[0], gas: '6000000', value: 20 });
+      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
     // The seller adds an item
     let itemTitle = 'Coffee';
-    let itemPrice = 3;
+    let itemPrice = Web3.utils.toWei('3', 'ether');
     await escrowContract.methods
       .offer(itemTitle, itemPrice)
       .send({ from: sellers[0], gas: '6000000' });
 
     // We read the balance before the order
     let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei before the order`);
+    let balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers before the order`);
 
     // The buyer orders an item
     await escrowContract.methods
       .order('Coffee')
       .send({ from: buyers[0], gas: '6000000' });
-
       
     // We read the last order id
     let lastOrderId = await escrowContract.methods.getLastOrderId().call();
     let balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
-    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrder} wei`);
+    let balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
+    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
 
     // We read the balance after the order
     balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei after the order`);
+    balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers after the order`);
 
     assert.equal(lastOrderId, 1);
     assert.equal(itemPrice, balanceLastOrder);
   });
 
-/*
-  it("non receivers can't accept delivery", async function() {
-    try { 
-      await deliveryContract.methods
-        .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-        .send({ from: accounts[3], gas: '6000000' });
-      assert(false);
-    } catch (err) {
-      assert(err);
-    } 
+  it('a buyer completes an order', async () => {
+    // The buyer makes a credit of 20 ethers
+    await escrowContract.methods
+      .credit()
+      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
+    // The seller adds an item
+    let itemTitle = 'Coffee';
+    let itemPrice = Web3.utils.toWei('3', 'ether');
+    await escrowContract.methods
+      .offer(itemTitle, itemPrice)
+      .send({ from: sellers[0], gas: '6000000' });
+
+    // The buyer orders an item
+    await escrowContract.methods
+      .order('Coffee')
+      .send({ from: buyers[0], gas: '6000000' });
+      
+    // We read the last order id
+    let lastOrderId = await escrowContract.methods.getLastOrderId().call();
+    let balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
+    let balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
+    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
+
+    // The buyer completes an order
+    await escrowContract.methods
+      .complete(lastOrderId)
+      .send({ from: buyers[0], gas: '6000000' });
+
+    // We read the last order id
+    balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
+    balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
+    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
+
   });
-
-  it("receiver can accept delivery", async function() {
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[1], gas: '6000000' });
-    let state = await deliveryContract.methods.getState(accounts[1]).call();
-    assert.equal(state, "accepted");
-  });
-
-  it("non sender can't finish delivery", async function() {
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[1], gas: '6000000' });
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[2], gas: '6000000' });
-    try { 
-      await deliveryContract.methods
-        .finish(accounts[1], "0x"+w.toString(16))
-        .send({ from: accounts[3], gas: '6000000' });
-      assert(false);
-    } catch (err) {
-      assert(err);
-    } 
-  });
-
-  it("sender can finish delivery", async function() {
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[1], gas: '6000000' });
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[2], gas: '6000000' });
-    await deliveryContract.methods
-      .finish(accounts[1], "0x"+w.toString(16))
-      .send({ from: accounts[0], gas: '6000000' });
-    let state = await deliveryContract.methods.getState(accounts[1]).call();
-    assert.equal(state, "finished");
-  });
-
-  it("received message is correct", async function() {
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[1], gas: '6000000' });
-    await deliveryContract.methods
-      .accept("0x"+z1.toString(16), "0x"+z2.toString(16), "0x"+yb.toString(16), "0x"+c.toString(16))
-      .send({ from: accounts[2], gas: '6000000' });
-    await deliveryContract.methods
-      .finish(accounts[1], "0x"+w.toString(16))
-      .send({ from: accounts[0], gas: '6000000' });
-
-    let _c2 = bigInt((await deliveryContract.methods.c2().call()).substr(2), 16);
-    let _ya = bigInt((await deliveryContract.methods.ya().call()).substr(2), 16);
-    let _p = bigInt((await deliveryContract.methods.p().call()).substr(2), 16);
-    let _w = bigInt((await deliveryContract.methods.getW(accounts[1]).call()).substr(2), 16);
-
-    let _r = _w.subtract(c.multiply(xb.mod(_p)));  // r = w-c*xb mod q
-
-    const messageReceived = _c2.divide(_ya.modPow(_r, _p));
-    const messageReceivedBuffer = Buffer.from(messageReceived.toString(16), 'hex');
-    assert.equal(messageReceivedBuffer, MESSAGE);
-  });*/
 });

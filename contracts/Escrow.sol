@@ -91,28 +91,31 @@ contract Escrow {
     return lastOrderId;
   }
 
-  // Get order information
-  /*function getOrder(uint _id) public view returns (uint, address, string, uint, address) {
-    // We check that the order exists
-    require(Order(orders[_id]) != Order(0), "This order doesn't exist");
-    return (
-      Order(orders[_id]).id,
-      Order(orders[_id]).buyer,
-      Order(orders[_id]).title,
-      Order(orders[_id]).price,
-      Order(orders[_id]).seller
-    );
-  }*/
-
   // Returns the balance of the order
-  function getOrderBalance(uint _id) public view returns (uint) {
-    if (orders[_id] == Order(0)) {
+  function getOrderBalance(uint _orderId) public view returns (uint) {
+    if (orders[_orderId] == Order(0)) {
       // If the order doesn't exist
       return 0;
     } else {
       // If the order exists, return its balance
-      return address(orders[_id]).balance;
+      return address(orders[_orderId]).balance;
     }
+  }
+
+  // The seller completes the Order
+  function complete(uint _orderId) public {
+    // We check that the order exists
+    require(orders[_orderId] != Order(0), "The order doesn't exist");
+    // We complete the order
+    Order(orders[_orderId]).complete(msg.sender);
+  }
+
+  // The seller complains the Order
+  function complain(uint _orderId) public {
+    // We check that the order exists
+    require(orders[_orderId] != Order(0), "The order doesn't exist");
+    // We complain the order
+    Order(orders[_orderId]).complain(msg.sender);
   }
  }
 
@@ -131,15 +134,18 @@ contract Account {
     address newOrder = (new Order).value(_price)(_id, accountAdress, _title, _price, _seller);
     return Order(newOrder);
   }
-
 }
 
 contract Order {
+  // Possible states
+  enum State { notexists, created, completed, complained }
+
   uint public id;
   address public buyer;
   string public title;
   uint public price;
   address public seller;
+  State public state;
 
   // Constructor funcion to create the order
   constructor (uint _id, address _sender, string _title, uint _price, address _seller) public payable {
@@ -150,5 +156,24 @@ contract Order {
     title = _title;
     price = _price;
     seller = _seller;
+    state = State.created;
+  }
+
+  function complete(address _sender) public {
+    // We check that the complete function is called by the buyer
+    require(buyer == _sender, "You must be the buyer of this order");
+    // We check that the order is created, and can't be yet completed or complained
+    require(state == State.created, "To complete the order, it can't be yet completed or complained");
+    // We paid the payment to the seller
+    seller.send(this.balance);
+  }
+
+  function complain(address _sender) public {
+    // We check that the complain function is called by the buyer
+    require(buyer == _sender, "You must be the buyer of this order");
+    // We check that the order is created, and can't be yet completed or complained
+    require(state == State.created, "To complain the order, it can't be yet completed or complained");
+    // We refund the payment to the buyer
+    buyer.send(this.balance);
   }
 }
