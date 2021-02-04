@@ -3,9 +3,10 @@ const fs = require("fs-extra"); // fs with extra functions
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const Web3 = require('web3');
 
-const compiledFactoryPath = './build/Escrow.json';
-const compiledFactory = require(compiledFactoryPath);
+const compiledEscrowPath = './build/Escrow.json';
+const compiledEscrow = require(compiledEscrowPath);
 
+// Mnemonic from a test account and an Infura provider
 const provider = new HDWalletProvider(
   'tragic square news business dad cricket nurse athlete tide split about ring',
   'https://rinkeby.infura.io/v3/b2daf36eb4d74aed8ffac330c09dd2ee'
@@ -17,19 +18,15 @@ const deploy = async () => {
 
   console.log('Attempting to deploy from account', accounts[0]);
 
-  const result = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
-    .deploy({ data: compiledFactory.bytecode, arguments: [] })
+  // We deploy the Escrow smart contract to the Rinkeby test network
+  const result = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
+    .deploy({ data: compiledEscrow.bytecode, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 
-  //fs.writeFileSync('./CONTRACTADDRESS', result.options.address);
-  compiledFactory.address = result.options.address;
-
-  fs.outputJsonSync(
-    path.resolve(__dirname, compiledFactoryPath),
-    compiledFactory,
-    {spaces: 2} // Indent json output with 2 spaces
-  );
-
+  // We write the address of the deployed contract to the CONTRACTADDRESS file
+  fs.writeFileSync('./CONTRACTADDRESS', result.options.address);
+  
   console.log('Contract deployed to Rinkeby network, at address ', result.options.address);
 };
+
 deploy();
