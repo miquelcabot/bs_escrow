@@ -1,11 +1,21 @@
 pragma solidity ^0.4.25;
 
 contract Escrow {
+  // Mapping for store the addresses of the Account contracts (buyers and sellers)
   mapping(address => address) public accounts;
+  // Array to store the addresses of the Account contracts (buyers and sellers) 
   address[] public accountsKeys;
 
   function credit() public payable {
-    address newAccount = (new Account).value(msg.value)(msg.sender);
+    if (accounts[msg.sender] == 0) {
+      // If the account doen't exist, we create it, and send the deposit to the Account contract
+      address newAccount = (new Account).value(msg.value)(msg.sender);
+      accounts[msg.sender] = newAccount;
+      accountsKeys.push(newAccount);
+    } else {
+      // If the account exists, we send the deposit to the Account contract
+      accounts[msg.sender].send(msg.value);
+    }
   }
 }
 

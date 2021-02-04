@@ -14,7 +14,6 @@ fs.removeSync(buildPath);
 // solc.compile generates a JSON output
 console.log("Compiling "+contractPath+"...");
 try {
-  console.log(contractSource);
   const output = solc.compile(contractSource, 1).contracts;
 
   // Ensure that build path exists

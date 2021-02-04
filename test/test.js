@@ -8,7 +8,6 @@ const compiledEscrow = require(compiledEscrowContractPath);
 
 let escrowContract;
 let accounts;
-// Arrays of buyers and sellers accounts
 let buyers = [];
 let sellers = [];
 
@@ -16,7 +15,7 @@ let sellers = [];
 require('events').EventEmitter.defaultMaxListeners = 0;
 
 beforeEach(async () => {
-
+  // We read the accounts of the Ganache network
   accounts = await web3.eth.getAccounts();
 
   // We set the buyers and sellers to specific accounts of the Ganache test network
@@ -42,8 +41,17 @@ beforeEach(async () => {
 describe('Escrow contract test', () => {
   it('deploys an Escrow contract', () => {
     // We check that the Escrow contract has been deployed
+    console.log(`The Escrow smart contract has the ${escrowContract.options.address} address`)
     assert.ok(escrowContract.options.address);
   });
+
+  it('a buyer makes a credit', async () => {
+    // Buyer 0 makes a credit of 20 Ethers
+    await escrowContract.methods
+      .credit()
+      .send({ from: accounts[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
+  });
+
 /*
   it("non receivers can't accept delivery", async function() {
     try { 
