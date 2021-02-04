@@ -42,7 +42,7 @@ contract Escrow {
   }
 
   // Returns the balance of the accounts
-  function getBalance(address _account) public view returns (uint) {
+  function getAccountBalance(address _account) public view returns (uint) {
     if (accounts[_account] == Account(0)) {
       // If the account doesn't exist
       return 0;
@@ -86,8 +86,13 @@ contract Escrow {
     ordersKeys.push(lastOrderId);
   }
 
+  function getLastOrderId() public returns (uint) {
+    // We return the Id of the last created order
+    return lastOrderId;
+  }
+
   // Get order information
-  /*unction getOrder(uint _id) public view returns (uint, address, string, uint, address) {
+  /*function getOrder(uint _id) public view returns (uint, address, string, uint, address) {
     // We check that the order exists
     require(Order(orders[_id]) != Order(0), "This order doesn't exist");
     return (
@@ -98,6 +103,17 @@ contract Escrow {
       Order(orders[_id]).seller
     );
   }*/
+
+  // Returns the balance of the order
+  function getOrderBalance(uint _id) public view returns (uint) {
+    if (orders[_id] == Order(0)) {
+      // If the order doesn't exist
+      return 0;
+    } else {
+      // If the order exists, return its balance
+      return address(orders[_id]).balance;
+    }
+  }
  }
 
 contract Account {

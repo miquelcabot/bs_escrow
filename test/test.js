@@ -46,21 +46,19 @@ describe('Escrow contract test', () => {
   });
 
   it('a buyer makes a credit', async () => {
-    // Buyer 0 makes a credit of 20 Ethers
+    // Buyer 0 makes a credit of 20 wei
     // We read the balance before the credit
-    let balanceBuyer0 = await escrowContract.methods.getBalance(buyers[0]).call();
-    let balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers before the credit`);
-    // The buyer makes a credit of 20 ethers
+    let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei before the credit`);
+    // The buyer makes a credit of 20 wei
     await escrowContract.methods
       .credit()
-      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
+      .send({ from: buyers[0], gas: '6000000', value: 20 });
     // We read the balance after the credit
-    balanceBuyer0 = await escrowContract.methods.getBalance(buyers[0]).call();
-    balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
-    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers after the credit`);
-    // We check that the credit is of 20 ethers
-    assert.equal(balanceBuyer0, Web3.utils.toWei('20', 'ether'))
+    balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei after the credit`);
+    // We check that the credit is of 20 wei
+    assert.equal(balanceBuyer0, 20)
   });
 
   it('a seller offers an item', async () => {
@@ -72,28 +70,43 @@ describe('Escrow contract test', () => {
       .send({ from: sellers[0], gas: '6000000' });
     // We check that the item has been saved, and has the correct price
     let checkItemPrice = await escrowContract.methods.getItemPrice('Coffee').call();
-    console.log(`The item '${itemTitle} has been saved with a price of ${checkItemPrice}`);
+    console.log(`The item '${itemTitle}' has been saved with a price of ${checkItemPrice} wei`);
     assert.equal(itemPrice, checkItemPrice);
   });
 
   it('a buyer orders an item', async () => {
-    // The buyer makes a credit of 20 ethers
+    // The buyer makes a credit of 20 wei
     await escrowContract.methods
       .credit()
-      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
+      .send({ from: buyers[0], gas: '6000000', value: 20 });
     // The seller adds an item
     let itemTitle = 'Coffee';
     let itemPrice = 3;
     await escrowContract.methods
       .offer(itemTitle, itemPrice)
       .send({ from: sellers[0], gas: '6000000' });
+
+    // We read the balance before the order
+    let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei before the order`);
+
     // The buyer orders an item
     await escrowContract.methods
       .order('Coffee')
       .send({ from: buyers[0], gas: '6000000' });
-    // We read the order information
-    let aa = await escrowContract.methods.getOrder(1).call();
-    console.log(aa);
+
+      
+    // We read the last order id
+    let lastOrderId = await escrowContract.methods.getLastOrderId().call();
+    let balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
+    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrder} wei`);
+
+    // We read the balance after the order
+    balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0} wei after the order`);
+
+    assert.equal(lastOrderId, 1);
+    assert.equal(itemPrice, balanceLastOrder);
   });
 
 /*
