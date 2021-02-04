@@ -1,7 +1,7 @@
 pragma solidity ^0.7.4;
 
 contract Escrow {
-  mapping(address => address) public accounts;
+  mapping(address => Account) public accounts;
   address[] public accountsKeys;
 
   function credit() public payable {
