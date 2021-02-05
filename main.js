@@ -9,6 +9,8 @@ let accounts;
 let buyers = [];
 let sellers = [];
 
+let orderIdTShirt, orderIdHoody, orderIdCoffee;
+
 const main = async () => {
   // We read the accounts of the Ganache network
   accounts = await web3.eth.getAccounts();
@@ -34,37 +36,37 @@ const main = async () => {
     .deploy({ data: compiledEscrow.bytecode, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 
-  // Buyer 0 makes a credit of 20 ethers
+  // Buyer 0 | Credit | 20
   await escrowContract.methods
     .credit()
     .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
 
-  // Buyer 1 makes a credit of 40 ethers
+  // Buyer 1 | Credit | 40
   await escrowContract.methods
     .credit()
     .send({ from: buyers[1], gas: '6000000', value: Web3.utils.toWei('40', 'ether') });
 
-  // Seller 0 offers Coffee, 3
+  // Seller 0 | Offer | Coffee, 3
   await escrowContract.methods
     .offer('Coffee', Web3.utils.toWei('3', 'ether'))
     .send({ from: sellers[0], gas: '6000000' });
 
-  // Seller 1 offers T-Shirt, 5
+  // Seller 1 | Offer | T-Shirt, 5
   await escrowContract.methods
     .offer('T-Shirt', Web3.utils.toWei('5', 'ether'))
     .send({ from: sellers[1], gas: '6000000' });
 
-  // Seller 0 offers Tea, 2.5
+  // Seller 0 | Offer | Tea, 2.5
   await escrowContract.methods
     .offer('Tea', Web3.utils.toWei('2.5', 'ether'))
     .send({ from: sellers[0], gas: '6000000' });
 
-  // Seller 0 offers Cake, 3.5
+  // Seller 0 | Offer | Cake, 3.5
   await escrowContract.methods
     .offer('Cake', Web3.utils.toWei('3.5', 'ether'))
     .send({ from: sellers[0], gas: '6000000' });
 
-  // Seller 1 offers Shorts, 8
+  // SSeller 1 | Offer | Shorts, 8
   await escrowContract.methods
     .offer('Shorts', Web3.utils.toWei('8', 'ether'))
     .send({ from: sellers[1], gas: '6000000' });
@@ -78,22 +80,29 @@ const main = async () => {
   await escrowContract.methods
     .order('T-Shirt')
     .send({ from: buyers[0], gas: '6000000' });
+  orderIdTShirt = await escrowContract.methods.getLastOrderId().call();
 
   // Buyer 0 | Credit | 10
-  await escrowContract.methods
-    .credit()
-    .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('40', 'ether') });
+  // kkk TODO await escrowContract.methods
+  //  .credit()
+  //  .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('10', 'ether') });
 
   // Buyer 1 | Order | Hoody
   await escrowContract.methods
     .order('Hoody')
-    .send({ from: buyers[0], gas: '6000000' });
+    .send({ from: buyers[1], gas: '6000000' });
+    orderIdHoody = await escrowContract.methods.getLastOrderId().call();
     
   // Buyer 0 | Complete | T-Shirt
+  await escrowContract.methods
+    .complete(orderIdTShirt)
+    .send({ from: buyers[0], gas: '6000000' });
+
   // Buyer 0 | Order | Coffee
   await escrowContract.methods
     .order('Coffee')
     .send({ from: buyers[0], gas: '6000000' });
+  orderIdCoffee = await escrowContract.methods.getLastOrderId().call();
     
   // Buyer 0 | Order | Cake
   await escrowContract.methods
@@ -101,12 +110,34 @@ const main = async () => {
     .send({ from: buyers[0], gas: '6000000' });
   
   // Buyer 1 | Complain | Hoody
+  await escrowContract.methods
+    .complain(orderIdHoody)
+    .send({ from: buyers[1], gas: '6000000' });
+
   // Buyer 1 | Order | Tea
   await escrowContract.methods
     .order('Tea')
-    .send({ from: buyers[0], gas: '6000000' });
+    .send({ from: buyers[1], gas: '6000000' });
   
   // Buyer 0 | Complete | Coffee
+  await escrowContract.methods
+    .complete(orderIdCoffee)
+    .send({ from: buyers[0], gas: '6000000' });
+
+  // 1. What is Buyer 0’s balance?
+  let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+  let balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+  console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers`);
+  
+  // 2. What is Seller 1’s balance?
+  let balanceSeller1 = await escrowContract.methods.getAccountBalance(sellers[1]).call();
+  let balanceSeller1Ethers = Web3.utils.fromWei(balanceSeller1, 'ether');
+  console.log(`The Seller 1 has a balance of ${balanceSeller1Ethers} ethers`);
+
+  // 3. What is the total amount held in escrow?
+  let totalHeld = await escrowContract.methods.getTotalHeld().call();
+  let totalHeldEthers = Web3.utils.fromWei(totalHeld, 'ether');
+  console.log(`The total amount held in escrow is ${totalHeldEthers} ethers`);
 }
 
 main();

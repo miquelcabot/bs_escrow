@@ -159,6 +159,17 @@ contract Escrow {
     // Emit the complainEvent
     emit complainEvent(_buyer, _orderId, _title, _price, _seller);
   }
+
+  // Counts the total amount held in escrow
+  function getTotalHeld() public view returns (uint) {
+    uint total = 0;
+    // We iterate throw all the orders to count to total amount held
+    for (uint i=0; i<ordersKeys.length; i++) {
+      total += orders[ordersKeys[i]].balance;
+    }
+    
+    return total;
+  }
  }
 
 /**

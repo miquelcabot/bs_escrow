@@ -100,6 +100,10 @@ describe('Escrow contract test', () => {
     balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
     console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers after the order`);
 
+    let totalHeld = await escrowContract.methods.getTotalHeld().call();
+    let totalHeldEthers = Web3.utils.fromWei(totalHeld, 'ether');
+    console.log(`The total amount held in escrow is ${totalHeldEthers} ethers`);
+
     assert.equal(lastOrderId, 1);
     assert.equal(itemPrice, balanceLastOrder);
   });
