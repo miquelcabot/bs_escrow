@@ -141,7 +141,7 @@ contract Escrow {
     address _seller = Order(orders[_orderId]).seller();
 
     // We complete the order
-    Order(orders[_orderId]).complete(msg.sender, Account(_seller));
+    Order(orders[_orderId]).complete(msg.sender, address(accounts[_seller]));
 
     // Emit the completeEvent
     emit completeEvent(_buyer, _orderId, _title, _price, _seller);
@@ -159,7 +159,7 @@ contract Escrow {
     address _seller = Order(orders[_orderId]).seller();
 
     // We complain the order
-    Order(orders[_orderId]).complain(msg.sender, Account(_buyer));
+    Order(orders[_orderId]).complain(msg.sender, address(accounts[_buyer]));
 
     // Emit the complainEvent
     emit complainEvent(_buyer, _orderId, _title, _price, _seller);
@@ -231,21 +231,21 @@ contract Order {
     state = State.created;
   }
 
-  function complete(address _sender, Account _sellerAccount) public {
+  function complete(address _sender, address _sellerAccount) public {
     // We check that the complete function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complete the order, it can't be yet completed or complained");
     // We paid the payment to the seller
-    address(_sellerAccount).transfer(address(this).balance);
+    _sellerAccount.transfer(address(this).balance);
   }
 
-  function complain(address _sender, Account _buyerAccount) public {
+  function complain(address _sender, address _buyerAccount) public {
     // We check that the complain function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complain the order, it can't be yet completed or complained");
     // We refund the payment to the buyer
-    address(_buyerAccount).transfer(address(this).balance);
+    _buyerAccount.transfer(address(this).balance);
   }
 }
