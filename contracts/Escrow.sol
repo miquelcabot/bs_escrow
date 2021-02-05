@@ -1,5 +1,10 @@
 pragma solidity ^0.4.25;
 
+/**
+  ------------------------------------------------------------------------------
+  Escrow smart contract with all data and methods from the escrow logic
+  ------------------------------------------------------------------------------
+ */
 contract Escrow {
   // Mapping to store the addresses of the Account contracts (buyers and sellers)
   mapping(address => Account) accounts;
@@ -165,7 +170,7 @@ contract Escrow {
     uint total = 0;
     // We iterate throw all the orders to count to total amount held
     for (uint i=0; i<ordersKeys.length; i++) {
-      total += orders[ordersKeys[i]].balance;
+      total += address(orders[ordersKeys[i]]).balance;
     }
     
     return total;
@@ -173,7 +178,11 @@ contract Escrow {
  }
 
 /**
-  Account contract to store the deposits */
+  ------------------------------------------------------------------------------
+  Account contract, that have the information of buyer and seller accounts, 
+  and stores the credit of each account
+  ------------------------------------------------------------------------------
+ */
 contract Account {
   // Address of the account (buyer or seller)
   address public accountAdress;
@@ -188,8 +197,17 @@ contract Account {
     address newOrder = (new Order).value(_price)(_id, accountAdress, _title, _price, _seller);
     return Order(newOrder);
   }
+
+  // Let thist contract receive transfers
+  function() public payable {}
 }
 
+/**
+  ------------------------------------------------------------------------------
+  Order contract, that have the information of each order, and stores the 
+  payments for each one
+  ------------------------------------------------------------------------------
+ */
 contract Order {
   // Possible states
   enum State { notexists, created, completed, complained }
@@ -219,7 +237,7 @@ contract Order {
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complete the order, it can't be yet completed or complained");
     // We paid the payment to the seller
-    address(_sellerAccount).transfer(this.balance);
+    address(_sellerAccount).transfer(address(this).balance);
   }
 
   function complain(address _sender, Account _buyerAccount) public {
@@ -228,6 +246,6 @@ contract Order {
     // We check that the order is created, and can't be yet completed or complained
     require(state == State.created, "To complain the order, it can't be yet completed or complained");
     // We refund the payment to the buyer
-    address(_buyerAccount).transfer(this.balance);
+    address(_buyerAccount).transfer(address(this).balance);
   }
 }
