@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs-extra"); // fs with extra functions
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 const Web3 = require('web3');
 
 const compiledEscrowPath = './build/Escrow.json';

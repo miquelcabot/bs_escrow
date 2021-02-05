@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.7.4;
+pragma solidity >=0.4.22 <0.9.0;
 
 /**
   ------------------------------------------------------------------------------
@@ -39,7 +38,7 @@ contract Escrow {
   event complainEvent(address buyer, uint orderId, string title, uint price, address seller);
 
   // Constructor of the Escrow contract
-  constructor () {
+  constructor () public {
     lastOrderId = 0;
   }
 
@@ -47,7 +46,7 @@ contract Escrow {
   function credit() public payable {
     if (accounts[msg.sender] == Account(0)) {
       // If the account doen't exist, we create it, and send the deposit to the Account contract
-      Account newAccount = new Account{value: msg.value}(msg.sender);
+      Account newAccount = (new Account).value(msg.value)(msg.sender);
       accounts[msg.sender] = newAccount;
       accountsKeys.push(msg.sender);
     } else {
@@ -190,18 +189,18 @@ contract Account {
   address public accountAdress;
   
   // Constructor funcion to create the account
-  constructor (address _sender) payable {
+  constructor (address _sender) public payable {
     accountAdress = _sender;
   }
 
   // Creates an order from an account and place the payment into that order
   function order(uint _id, string memory _title, uint _price, address _seller) public returns (Order) {
-    Order newOrder = new Order{value: _price}(_id, accountAdress, _title, _price, _seller);
+    Order newOrder = (new Order).value(_price)(_id, accountAdress, _title, _price, _seller);
     return newOrder;
   }
 
   // Let thist contract receive transfers
-  receive() external payable {}
+  function() external payable {}
 }
 
 /**
@@ -222,7 +221,7 @@ contract Order {
   State public state;
 
   // Constructor funcion to create the order
-  constructor (uint _id, address _sender, string memory _title, uint _price, address _seller) payable {
+  constructor (uint _id, address _sender, string memory _title, uint _price, address _seller) public payable {
     // Requires that the sender send a deposit of minimum 1 wei (>0 wei)
     require(msg.value>0, "Sender has to send a deposit of minimun 1 wei");
     id = _id;
