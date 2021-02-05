@@ -36,6 +36,38 @@ const main = async () => {
     .deploy({ data: compiledEscrow.bytecode, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 
+  // We subscribe to the Escrow contract events
+  escrowContract.events.creditEvent().on("data", (event) => {
+    let buyer = event.returnValues.buyer;
+    let amount = Web3.utils.fromWei(event.returnValues.amount, 'ether');
+    console.log(`Buyer ${buyer}  | Credit   | ${amount}`);
+  });
+
+  escrowContract.events.offerEvent().on("data", (event) => {
+    let seller = event.returnValues.seller;
+    let title = event.returnValues.title;
+    let price = Web3.utils.fromWei(event.returnValues.price, 'ether');
+    console.log(`Seller ${seller} | Offer    | ${title}, ${price}`);
+  });
+
+  escrowContract.events.orderEvent().on("data", (event) => {
+    let buyer = event.returnValues.buyer;
+    let title = event.returnValues.title;
+    console.log(`Buyer ${buyer}  | Order    | ${title}`);
+  });
+
+  escrowContract.events.completeEvent().on("data", (event) => {
+    let buyer = event.returnValues.buyer;
+    let title = event.returnValues.title;
+    console.log(`Buyer ${buyer}  | Complete | ${title}`);
+  });
+
+  escrowContract.events.complainEvent().on("data", (event) => {
+    let buyer = event.returnValues.buyer;
+    let title = event.returnValues.title;
+    console.log(`Buyer ${buyer}  | Complain | ${title}`);
+  });
+
   // Buyer 0 | Credit | 20
   await escrowContract.methods
     .credit()
