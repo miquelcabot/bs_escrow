@@ -115,9 +115,9 @@ const main = async () => {
   orderIdTShirt = await escrowContract.methods.getLastOrderId().call();
 
   // Buyer 0 | Credit | 10
-  // kkk TODO await escrowContract.methods
-  //  .credit()
-  //  .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('10', 'ether') });
+  await escrowContract.methods
+    .credit()
+    .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('10', 'ether') });
 
   // Buyer 1 | Order | Hoody
   await escrowContract.methods
