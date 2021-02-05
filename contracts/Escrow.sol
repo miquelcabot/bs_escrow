@@ -24,6 +24,14 @@ contract Escrow {
   // Array to store the keys of the items offered by the buyers
   string[] public itemsKeys;
 
+  // Events
+  event creditEvent(address buyer, uint amount);
+  event offerEvent(address seller, string title, uint price);
+  event orderEvent(address buyer, uint orderId, string title, uint price, address seller);
+  event completeEvent(address buyer, uint orderId, string title, uint price, address seller);
+  event complainEvent(address buyer, uint orderId, string title, uint price, address seller);
+
+  // Constructor of the Escrow contract
   constructor () public {
     lastOrderId = 0;
   }
@@ -39,6 +47,8 @@ contract Escrow {
       // If the account exists, we transfer the deposit to the Account contract
       address(accounts[msg.sender]).transfer(msg.value);
     }
+    // Emit the creditEvent
+    emit creditEvent(msg.sender, msg.value);
   }
 
   // Returns the balance of the accounts
@@ -68,6 +78,8 @@ contract Escrow {
       accounts[msg.sender] = Account(newAccount);
       accountsKeys.push(msg.sender);
     }
+    // Emit the offerEvent
+    emit offerEvent(msg.sender, _title, _price);
   }
 
   // Returns the price of an item
@@ -90,8 +102,12 @@ contract Escrow {
       .order(lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller);
     orders[lastOrderId] = Order(newOrder);
     ordersKeys.push(lastOrderId);
+
+    // Emit the orderEvent
+    emit orderEvent(msg.sender, lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller);
   }
 
+  // Get the Id of the last created order
   function getLastOrderId() public view returns (uint) {
     // We return the Id of the last created order
     return lastOrderId;
@@ -112,16 +128,36 @@ contract Escrow {
   function complete(uint _orderId) public {
     // We check that the order exists
     require(orders[_orderId] != Order(0), "The order doesn't exist");
+    
+    // We read the data of the order
+    address _buyer = Order(orders[_orderId]).buyer();
+    string memory _title = Order(orders[_orderId]).title();
+    uint _price = Order(orders[_orderId]).price();
+    address _seller = Order(orders[_orderId]).seller();
+
     // We complete the order
-    Order(orders[_orderId]).complete(msg.sender, Account(Order(orders[_orderId]).getSeller()));
+    Order(orders[_orderId]).complete(msg.sender, Account(_seller));
+
+    // Emit the completeEvent
+    emit completeEvent(_buyer, _orderId, _title, _price, _seller);
   }
 
   // The seller complains the Order
   function complain(uint _orderId) public {
     // We check that the order exists
     require(orders[_orderId] != Order(0), "The order doesn't exist");
+
+    // We read the data of the order
+    address _buyer = Order(orders[_orderId]).buyer();
+    string memory _title = Order(orders[_orderId]).title();
+    uint _price = Order(orders[_orderId]).price();
+    address _seller = Order(orders[_orderId]).seller();
+
     // We complain the order
-    Order(orders[_orderId]).complain(msg.sender, Account(Order(orders[_orderId]).getBuyer()));
+    Order(orders[_orderId]).complain(msg.sender, Account(_buyer));
+
+    // Emit the complainEvent
+    emit complainEvent(_buyer, _orderId, _title, _price, _seller);
   }
  }
 
@@ -182,15 +218,5 @@ contract Order {
     require(state == State.created, "To complain the order, it can't be yet completed or complained");
     // We refund the payment to the buyer
     address(_buyerAccount).transfer(this.balance);
-  }
-
-  // Returns the buyer of the order
-  function getBuyer() public view returns (address) {
-    return buyer;
-  }
-
-  // Returns the seller of the order
-  function getSeller() public view returns (address) {
-    return seller;
   }
 }

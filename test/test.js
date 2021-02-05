@@ -3,8 +3,7 @@ const ganache = require('ganache-cli');
 const Web3 = require('web3');
 const web3 = new Web3(ganache.provider());
 
-const compiledEscrowContractPath = '../build/Escrow.json';
-const compiledEscrow = require(compiledEscrowContractPath);
+const compiledEscrow = require('../build/Escrow.json');
 
 let escrowContract;
 let accounts;
@@ -23,17 +22,6 @@ beforeEach(async () => {
   buyers[1] = accounts[1];
   sellers[0] = accounts[2];
   sellers[1] = accounts[3];
-
-  /*
-  // We print the buyer's addresses
-  buyers.forEach((address, index) => {
-    console.log(`Buyer ${index} has the address: ${address}`);
-  });
-  // We print the sellers's addresses
-  sellers.forEach((address, index) => {
-    console.log(`Buyer ${index} has the address: ${address}`);
-  });
-  */
 
   escrowContract = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
     .deploy({ data: compiledEscrow.bytecode, arguments: [] })
@@ -158,5 +146,49 @@ describe('Escrow contract test', () => {
     balanceSeller0 = await escrowContract.methods.getAccountBalance(sellers[0]).call();
     balanceSeller0Ethers = Web3.utils.fromWei(balanceSeller0, 'ether');
     console.log(`The Seller 0 has a balance of ${balanceSeller0Ethers} ethers after completing the order`);
+  });
+
+  it('a buyer complains an order', async () => {
+    // The buyer makes a credit of 20 ethers
+    await escrowContract.methods
+      .credit()
+      .send({ from: buyers[0], gas: '6000000', value: Web3.utils.toWei('20', 'ether') });
+    // The seller adds an item
+    let itemTitle = 'Coffee';
+    let itemPrice = Web3.utils.toWei('3', 'ether');
+    await escrowContract.methods
+      .offer(itemTitle, itemPrice)
+      .send({ from: sellers[0], gas: '6000000' });
+
+    // The buyer orders an item
+    await escrowContract.methods
+      .order('Coffee')
+      .send({ from: buyers[0], gas: '6000000' });
+      
+    // We read the last order id
+    let lastOrderId = await escrowContract.methods.getLastOrderId().call();
+    let balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
+    let balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
+    console.log(`The Buyer 0 has created the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
+
+    // We read the balance before complaining the order
+    let balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    let balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers before complaining the order`);
+
+    // The buyer complains an order
+    await escrowContract.methods
+      .complain(lastOrderId)
+      .send({ from: buyers[0], gas: '6000000' });
+
+    // We read the last order id
+    balanceLastOrder = await escrowContract.methods.getOrderBalance(lastOrderId).call();
+    balanceLastOrderEthers = Web3.utils.fromWei(balanceLastOrder, 'ether');
+    console.log(`The Buyer 0 has complained the order number ${lastOrderId}, with a balance of ${balanceLastOrderEthers} ethers`);
+
+    // We read the balance after complaining the order
+    balanceBuyer0 = await escrowContract.methods.getAccountBalance(buyers[0]).call();
+    balanceBuyer0Ethers = Web3.utils.fromWei(balanceBuyer0, 'ether');
+    console.log(`The Buyer 0 has a balance of ${balanceBuyer0Ethers} ethers after completing the order`);
   });
 });

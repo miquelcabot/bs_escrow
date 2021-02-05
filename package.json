@@ -4,8 +4,9 @@
   "description": "Boson Protocol - Engineer Technical Interview - Problem Statement",
   "author": "Miquel Àngel Cabot <miquel.cabot@gmail.com>",
   "license": "MIT",
-  "main": "compile.js",
+  "main": "main.js",
   "scripts": {
+    "start": "node main.js",
     "compile": "node compile.js",
     "deploy": "node deploy.js",
     "test": "mocha"
