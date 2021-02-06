@@ -1,10 +1,9 @@
 const path = require("path");
 const fs = require("fs-extra"); // fs with extra functions
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 const Web3 = require('web3');
 
-const compiledEscrowPath = './build/Escrow.json';
-const compiledEscrow = require(compiledEscrowPath);
+const compiledEscrow = require('./build/Escrow.json');
 
 // Mnemonic from a test account and an Infura provider
 const provider = new HDWalletProvider(
@@ -19,8 +18,8 @@ const deploy = async () => {
   console.log('Attempting to deploy from account', accounts[0]);
 
   // We deploy the Escrow smart contract to the Rinkeby test network
-  const result = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
-    .deploy({ data: compiledEscrow.bytecode, arguments: [] })
+  const result = await new web3.eth.Contract(compiledEscrow.abi)
+    .deploy({ data: compiledEscrow.evm.bytecode.object, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 
   // We write the address of the deployed contract to the CONTRACTADDRESS file

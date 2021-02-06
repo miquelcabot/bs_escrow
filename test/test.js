@@ -23,8 +23,8 @@ beforeEach(async () => {
   sellers[0] = accounts[2];
   sellers[1] = accounts[3];
 
-  escrowContract = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
-    .deploy({ data: compiledEscrow.bytecode, arguments: [] })
+  escrowContract = await new web3.eth.Contract(compiledEscrow.abi)
+    .deploy({ data: compiledEscrow.evm.bytecode.object, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 });
 

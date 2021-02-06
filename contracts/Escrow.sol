@@ -1,4 +1,6 @@
-pragma solidity ^0.4.25;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.7.4;
 
 /**
   ------------------------------------------------------------------------------
@@ -37,7 +39,7 @@ contract Escrow {
   event complainEvent(address buyer, uint orderId, string title, uint price, address seller);
 
   // Constructor of the Escrow contract
-  constructor () public {
+  constructor () {
     lastOrderId = 0;
   }
 
@@ -45,8 +47,8 @@ contract Escrow {
   function credit() public payable {
     if (accounts[msg.sender] == Account(0)) {
       // If the account doen't exist, we create it, and send the deposit to the Account contract
-      address newAccount = (new Account).value(msg.value)(msg.sender);
-      accounts[msg.sender] = Account(newAccount);
+      Account newAccount = new Account{value: msg.value}(msg.sender);
+      accounts[msg.sender] = newAccount;
       accountsKeys.push(msg.sender);
     } else {
       // If the account exists, we transfer the deposit to the Account contract
@@ -68,7 +70,7 @@ contract Escrow {
   }
 
   // Lets sellers to offer an item for sale
-  function offer(string _title, uint _price) public {
+  function offer(string memory _title, uint _price) public {
     // We check that the item doesn't exist yet
     require(items[_title].price == 0, "This item already exists");
     // We add the item to the items mapping
@@ -79,8 +81,8 @@ contract Escrow {
     itemsKeys.push(_title);
     // If the account doen't exist, we create it
     if (accounts[msg.sender] == Account(0)) {
-      address newAccount = new Account(msg.sender);
-      accounts[msg.sender] = Account(newAccount);
+      Account newAccount = new Account(msg.sender);
+      accounts[msg.sender] = newAccount;
       accountsKeys.push(msg.sender);
     }
     // Emit the offerEvent
@@ -88,12 +90,12 @@ contract Escrow {
   }
 
   // Returns the price of an item
-  function getItemPrice(string _itemTitle) public view returns (uint) {
+  function getItemPrice(string memory _itemTitle) public view returns (uint) {
     return items[_itemTitle].price;
   }
 
   // Order item offered by seller
-  function order(string _itemTitle) public {
+  function order(string memory _itemTitle) public {
     // We check that the buyer has an account
     require(accounts[msg.sender] != Account(0), "You haven't a buyer account");
     // We check that the item exists
@@ -103,9 +105,9 @@ contract Escrow {
 
     // We create the order from the buyer's account
     lastOrderId++;
-    address newOrder = Account(accounts[msg.sender])
+    Order newOrder = Account(accounts[msg.sender])
       .order(lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller);
-    orders[lastOrderId] = Order(newOrder);
+    orders[lastOrderId] = newOrder;
     ordersKeys.push(lastOrderId);
 
     // Emit the orderEvent
@@ -188,18 +190,18 @@ contract Account {
   address public accountAdress;
   
   // Constructor funcion to create the account
-  constructor (address _sender) public payable {
+  constructor (address _sender) payable {
     accountAdress = _sender;
   }
 
   // Creates an order from an account and place the payment into that order
-  function order(uint _id, string _title, uint _price, address _seller) public returns (Order) {
-    address newOrder = (new Order).value(_price)(_id, accountAdress, _title, _price, _seller);
-    return Order(newOrder);
+  function order(uint _id, string memory _title, uint _price, address _seller) public returns (Order) {
+    Order newOrder = new Order{value: _price}(_id, accountAdress, _title, _price, _seller);
+    return newOrder;
   }
 
   // Let thist contract receive transfers
-  function() public payable {}
+  receive() external payable {}
 }
 
 /**
@@ -220,7 +222,7 @@ contract Order {
   State public state;
 
   // Constructor funcion to create the order
-  constructor (uint _id, address _sender, string _title, uint _price, address _seller) public payable {
+  constructor (uint _id, address _sender, string memory _title, uint _price, address _seller) payable {
     // Requires that the sender send a deposit of minimum 1 wei (>0 wei)
     require(msg.value>0, "Sender has to send a deposit of minimun 1 wei");
     id = _id;
@@ -231,7 +233,7 @@ contract Order {
     state = State.created;
   }
 
-  function complete(address _sender, address _sellerAccount) public {
+  function complete(address _sender, address payable _sellerAccount) public {
     // We check that the complete function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
@@ -240,7 +242,7 @@ contract Order {
     _sellerAccount.transfer(address(this).balance);
   }
 
-  function complain(address _sender, address _buyerAccount) public {
+  function complain(address _sender, address payable _buyerAccount) public {
     // We check that the complain function is called by the buyer
     require(buyer == _sender, "You must be the buyer of this order");
     // We check that the order is created, and can't be yet completed or complained
