@@ -240,6 +240,7 @@ contract Order {
     require(state == State.created, "To complete the order, it can't be yet completed or complained");
     // We paid the payment to the seller
     _sellerAccount.transfer(address(this).balance);
+    state = State.completed;
   }
 
   function complain(address _sender, address payable _buyerAccount) public {
@@ -249,5 +250,6 @@ contract Order {
     require(state == State.created, "To complain the order, it can't be yet completed or complained");
     // We refund the payment to the buyer
     _buyerAccount.transfer(address(this).balance);
+    state = State.complained;
   }
 }
