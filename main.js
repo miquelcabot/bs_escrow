@@ -32,8 +32,8 @@ const main = async () => {
   });
 
   // Deployment of the Escrow contract
-  escrowContract = await new web3.eth.Contract(JSON.parse(compiledEscrow.interface))
-    .deploy({ data: compiledEscrow.bytecode, arguments: [] })
+  escrowContract = await new web3.eth.Contract(compiledEscrow.abi)
+    .deploy({ data: compiledEscrow.evm.bytecode.object, arguments: [] })
     .send({ from: accounts[0], gas: '6000000' });
 
   // We subscribe to the Escrow contract events
