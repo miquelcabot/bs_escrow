@@ -58,7 +58,7 @@ describe('Escrow contract test', () => {
     let itemTitle = 'Coffee';
     let itemPrice = Web3.utils.toWei('3', 'ether');
     await escrowContract.methods
-      .offer(itemTitle, itemPrice)
+      .offer(itemTitle, itemPrice, 100)
       .send({ from: sellers[0], gas: '6000000' });
     // We check that the item has been saved, and has the correct price
     let checkItemPrice = await escrowContract.methods.getItemPrice('Coffee').call();
@@ -76,7 +76,7 @@ describe('Escrow contract test', () => {
     let itemTitle = 'Coffee';
     let itemPrice = Web3.utils.toWei('3', 'ether');
     await escrowContract.methods
-      .offer(itemTitle, itemPrice)
+      .offer(itemTitle, itemPrice, 100)
       .send({ from: sellers[0], gas: '6000000' });
 
     // We read the balance before the order
@@ -86,7 +86,7 @@ describe('Escrow contract test', () => {
 
     // The buyer orders an item
     await escrowContract.methods
-      .order('Coffee')
+      .order('Coffee', 10)
       .send({ from: buyers[0], gas: '6000000' });
       
     // We read the last order id
@@ -117,12 +117,12 @@ describe('Escrow contract test', () => {
     let itemTitle = 'Coffee';
     let itemPrice = Web3.utils.toWei('3', 'ether');
     await escrowContract.methods
-      .offer(itemTitle, itemPrice)
+      .offer(itemTitle, itemPrice, 100)
       .send({ from: sellers[0], gas: '6000000' });
 
     // The buyer orders an item
     await escrowContract.methods
-      .order('Coffee')
+      .order('Coffee', 10)
       .send({ from: buyers[0], gas: '6000000' });
       
     // We read the last order id

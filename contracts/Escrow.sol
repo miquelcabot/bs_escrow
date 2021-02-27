@@ -25,6 +25,7 @@ contract Escrow {
     string title;
     uint price;
     address seller;
+    uint stock;
   }
   // Mapping to store the items offered by the buyers
   mapping(string => Item) items;
@@ -34,7 +35,7 @@ contract Escrow {
   // Events
   event creditEvent(address buyer, uint amount);
   event offerEvent(address seller, string title, uint price);
-  event orderEvent(address buyer, uint orderId, string title, uint price, address seller);
+  event orderEvent(address buyer, uint orderId, string title, uint price, address seller, uint quantity);
   event completeEvent(address buyer, uint orderId, string title, uint price, address seller);
   event complainEvent(address buyer, uint orderId, string title, uint price, address seller);
 
@@ -70,12 +71,13 @@ contract Escrow {
   }
 
   // Lets sellers to offer an item for sale
-  function offer(string memory _title, uint _price) public {
+  function offer(string memory _title, uint _price, uint _stock) public {
     // We check that the item doesn't exist yet
     require(items[_title].price == 0, "This item already exists");
     // We add the item to the items mapping
     items[_title].title = _title;
     items[_title].price = _price;
+    items[_title].stock = _stock;
     items[_title].seller = msg.sender;
     // We add the item to the itemsKeys array
     itemsKeys.push(_title);
@@ -95,23 +97,25 @@ contract Escrow {
   }
 
   // Order item offered by seller
-  function order(string memory _itemTitle) public {
+  function order(string memory _itemTitle, uint _quantity) public {
     // We check that the buyer has an account
     require(accounts[msg.sender] != Account(0), "You haven't a buyer account");
     // We check that the item exists
     require(items[_itemTitle].price != 0, "This item doesn't exist");
     // We check that the buyer has enough funds
-    require(items[_itemTitle].price <= address(accounts[msg.sender]).balance, "You haven't enough funds");
+    require((items[_itemTitle].price * _quantity) <= address(accounts[msg.sender]).balance, "You haven't enough funds");
+    require(items[_itemTitle].stock >= _quantity, "We don't have enough stock");
 
     // We create the order from the buyer's account
     lastOrderId++;
     Order newOrder = Account(accounts[msg.sender])
-      .order(lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller);
+      .order(lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller, _quantity);
+    items[_itemTitle].stock = items[_itemTitle].stock - _quantity;
     orders[lastOrderId] = newOrder;
     ordersKeys.push(lastOrderId);
 
     // Emit the orderEvent
-    emit orderEvent(msg.sender, lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller);
+    emit orderEvent(msg.sender, lastOrderId, items[_itemTitle].title, items[_itemTitle].price, items[_itemTitle].seller, _quantity);
   }
 
   // Get the Id of the last created order
@@ -195,8 +199,8 @@ contract Account {
   }
 
   // Creates an order from an account and place the payment into that order
-  function order(uint _id, string memory _title, uint _price, address _seller) public returns (Order) {
-    Order newOrder = new Order{value: _price}(_id, accountAdress, _title, _price, _seller);
+  function order(uint _id, string memory _title, uint _price, address _seller, uint _quantity) public returns (Order) {
+    Order newOrder = new Order{value: _price * _quantity}(_id, accountAdress, _title, _price, _seller, _quantity);
     return newOrder;
   }
 
@@ -219,10 +223,11 @@ contract Order {
   string public title;
   uint public price;
   address public seller;
+  uint public quantity;
   State public state;
 
   // Constructor funcion to create the order
-  constructor (uint _id, address _sender, string memory _title, uint _price, address _seller) payable {
+  constructor (uint _id, address _sender, string memory _title, uint _price, address _seller, uint _quantity) payable {
     // Requires that the sender send a deposit of minimum 1 wei (>0 wei)
     require(msg.value>0, "Sender has to send a deposit of minimun 1 wei");
     id = _id;
@@ -230,6 +235,7 @@ contract Order {
     title = _title;
     price = _price;
     seller = _seller;
+    quantity = _quantity;
     state = State.created;
   }
 
