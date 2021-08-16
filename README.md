@@ -1,5 +1,4 @@
-# Boson Escrow
-Boson Protocol - Engineer Technical Interview - Problem Statement
+# Escrow Test
 
 ## Requirements
 Requirements: [NodeJS](https://nodejs.org/en/).
